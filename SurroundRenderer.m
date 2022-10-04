@@ -130,26 +130,6 @@ function stop_btn_Callback(hObject, eventdata, handles)
 handles.stop_now = 1;
 guidata(hObject, handles);
 
-% --- Executes on button press in harmonic_simulation.
-function harmonic_simulation_Callback(hObject, eventdata, handles)
-handles.simulator = [];
-handles.simulator = sound_scene_simulator(handles.sound_scene, handles.sound_scene_gui, 'harmonic', 1e3 );
-handles.simulator.simulate(handles.sim_t.Value);
-guidata(hObject,handles);
-
-% --- Executes on button press in impulsive_simulation.
-function impulsive_simulation_Callback(hObject, eventdata, handles)
-handles.simulator = [];
-handles.simulator = sound_scene_simulator(handles.sound_scene, handles.sound_scene_gui, 'impulse', 4 );
-handles.simulator.simulate(handles.sim_t.Value);
-guidata(hObject,handles);
-
-% --- Executes on slider movement.
-function sim_t_Callback(hObject, eventdata, handles)
-if isfield(handles,'simulator')
-    handles.simulator.simulate(handles.sim_t.Value);
-end
-guidata(hObject,handles);
 
 % --- Executes during object creation, after setting all properties.
 function sim_t_CreateFcn(hObject, eventdata, handles)
