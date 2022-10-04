@@ -25,15 +25,14 @@ SOFAstart;
 hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
 
 % Setup options:
-%   Rendering:              'Binaural':        Binaural rendering only
-%                           'CTC':             Crosstalk cancellation,
+%   Rendering:              'CTC':             Crosstalk cancellation,
 %                                              requiring speakers
 %                           'WFS':             Wave Field Synthesis driving
 %                                              functions
 %                           'VBAP':            Vector-based Amplitude
 %                                              Panning
 %                           '':
-%   Binaural_source_type:   'point_source':    omnidirectional directivity,
+%   Loudspeaker_type:   'point_source':    omnidirectional directivity,
 %                                              parameter: R (only for drawing)
 %                           'circular_piston': baffled piston directivity,
 %                                              parameter: R radius
@@ -59,9 +58,9 @@ handles.sound_scene_setup = struct(  ...
     'HRTF',                     hrtf_sofa, ...
     'sofa_def_path',            '..',...
     'Volume',                   0.5, ...
-    'Binaural_source_type',     struct('Shape','circular_piston','R',0.05),...
+    'Loudspeaker_type',     struct('Shape','circular_piston','R',0.05),...
     'Virtual_source_type',      struct('Shape','point_source','R',0.025),...
-    'Rendering',                'VBAP',...
+    'Rendering',                'CTC',...
     'renderer_setup',           struct('R',2,'N',N_ssd,'Antialiasing','off'));
 
 if length(varargin) ~= 0

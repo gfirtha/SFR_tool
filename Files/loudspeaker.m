@@ -1,4 +1,4 @@
-classdef binaural_source < handle
+classdef loudspeaker < handle
     %VIRTUAL_SOURCE Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -12,7 +12,7 @@ classdef binaural_source < handle
     end
     
     methods
-        function obj = binaural_source(idx, position, orientation, hrtf, type)
+        function obj = loudspeaker(idx, position, orientation, hrtf, type)
             obj.source_index = idx;
             obj.position = position;
             obj.orientation = orientation;
