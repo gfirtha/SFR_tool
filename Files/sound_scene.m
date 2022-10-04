@@ -25,9 +25,9 @@ classdef sound_scene < handle
                     end
                 case 'CTC'
                     pos = get_default_layout(setup.Input_stream.info.NumChannels, mean(setup.HRTF.SourcePosition(:,3))); %last parameter: how many meters away the default source is
-                    for n = 1 : setup.Input_stream.info.NumChannels
-                        obj.create_ctc_source((pos(n,:),-pos(n,:)/norm(pos(n,:))),gui, );
-                    end
+              %      for n = 1 : setup.Input_stream.info.NumChannels
+              %          obj.create_ctc_source((pos(n,:),-pos(n,:)/norm(pos(n,:))),gui, );
+              %      end
                 otherwise
                     %R0 = mean(setup.HRTF.SourcePosition(:,3));
                     R0 = setup.renderer_setup.R;
