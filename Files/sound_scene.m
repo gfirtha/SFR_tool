@@ -41,16 +41,10 @@ classdef sound_scene < handle
             draggable(gui.receiver,@update_receiver_position, @update_receiver_orientation);
             function update_receiver_position(receiver)
                 obj.receiver.position = gui.receiver.UserData.Origin;
-                for n = 1 : length(obj.scene_renderer.binaural_renderer)
-                    obj.scene_renderer.update_binaural_renderers(n,'receiver_moved');
-                end
             end
             function update_receiver_orientation(receiver)
                 obj.receiver.orientation = [cosd(gui.receiver.UserData.Orientation),...
                     sind(gui.receiver.UserData.Orientation)];
-                for n = 1 : length(obj.scene_renderer.binaural_renderer)
-                    obj.scene_renderer.update_binaural_renderers(n, 'receiver_rotated' );
-                end
             end
 
         end
@@ -134,7 +128,7 @@ classdef sound_scene < handle
             clear obj
         end
 
-        function output = binauralize_sound_scene(obj,input)
+        function output = render_sound_scene(obj,input)
             output = obj.scene_renderer.render(input);
         end
     end

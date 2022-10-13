@@ -90,7 +90,7 @@ while (~isDone(handles.sound_scene_setup.Input_stream))&&(~handles.stop_now)
     if handles.Bypass.Value == 1
         output = handles.sound_scene_setup.Input_stream();
     else
-    output = handles.sound_scene.binauralize_sound_scene(handles.sound_scene_setup.Volume*...
+    output = handles.sound_scene.render_sound_scene(handles.sound_scene_setup.Volume*...
         handles.sound_scene_setup.Input_stream());
     end
     elapsed_time(i) = toc;
