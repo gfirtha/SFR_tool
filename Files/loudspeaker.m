@@ -8,7 +8,6 @@ classdef loudspeaker < handle
         position
         orientation
         source_type
-        output_signal
     end
     
     methods
@@ -18,10 +17,6 @@ classdef loudspeaker < handle
             obj.orientation = orientation;
             obj.source_signal = signal;
             obj.source_type = type;
-        end
-
-        function obj = set_output(obj,source_signal)
-            obj.output_signal = source_signal;
         end
         
         function obj = set_input(obj,varargin)

@@ -6,7 +6,6 @@ classdef sound_scene < handle
     properties
         virtual_sources % Virtual source: WFS or HOA or stereo etc source (should be a class with input signal,)
         loudspeaker_array % sources to be binauralized by binaural method
-        ctc_source % The real life speakers
         receiver
         environment
         scene_renderer
@@ -25,7 +24,7 @@ classdef sound_scene < handle
             end
             pos_ssd = get_default_layout(setup.renderer_setup.N,R0);
             for n = 1 : setup.renderer_setup.N
-                obj.create_loudspeaker( pos_ssd(n,:),-pos_ssd(n,:)/norm(pos_ssd(n,:)), gui, setup.HRTF, setup.loudspeaker_type);
+                obj.create_loudspeaker( pos_ssd(n,:),-pos_ssd(n,:)/norm(pos_ssd(n,:)), gui, setup.loudspeaker_type);
                 obj.loudspeaker_array{n}.set_input(zeros(setup.Block_size,1),setup.Input_stream.SampleRate);
             end
             gui.main_axes.XLim = (R0+1)*[-1,1];
@@ -83,41 +82,33 @@ classdef sound_scene < handle
             delete(gui.virtual_source_points{virt_source_idx});
         end
 
-        function obj = create_loudspeaker(obj, position, orientation, gui, hrtf, type)
+        function obj = create_loudspeaker(obj, position, orientation, gui, type)
             idx = length(obj.loudspeaker_array) + 1;
-            obj.loudspeaker_array{idx} = loudspeaker(idx, position, orientation, hrtf, type);
+            obj.loudspeaker_array{idx} = loudspeaker(idx, position, orientation, type);
             gui.loudspeaker_points{idx} = ...
                 gui.draw_loudspeaker(position,type.R(1),cart2pol(orientation(1),orientation(2))*180/pi,idx);
 
-            draggable(gui.loudspeaker_points{idx},@update_binaural_position, @update_binaural_orientation);
-            function update_binaural_position(loudspeaker)
+            draggable(gui.loudspeaker_points{idx},@update_loudspeaker_position, @update_loudspeaker_orientation);
+            function update_loudspeaker_position(loudspeaker)
                 obj.loudspeaker_array{loudspeaker.UserData.Label}.position...
                     = gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Origin;
                 for n = 1 : length(obj.scene_renderer.SFS_renderer)
                     obj.scene_renderer.update_SFS_renderers(n);
                 end
-                obj.scene_renderer.update_binaural_renderers(loudspeaker.UserData.Label,'source_moved');
             end
-            function update_binaural_orientation(loudspeaker)
+            function update_loudspeaker_orientation(loudspeaker)
                 obj.loudspeaker_array{loudspeaker.UserData.Label}.orientation...
                     = [ cosd(gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Orientation),...
                     sind(gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Orientation)];
                 for n = 1 : length(obj.scene_renderer.SFS_renderer)
                     obj.scene_renderer.update_SFS_renderers(n);
                 end
-                obj.scene_renderer.update_binaural_renderers(loudspeaker.UserData.Label,'source_rotated');
-            end
+             end
         end
 
         function obj = delete_loudspeaker(obj, bin_source_idx, gui)
             obj.loudspeaker_array(bin_source_idx) = [];
             delete(gui.loudspeaker_points{bin_source_idx});
-        end
-
-        %class of array
-        function obj = create_ctc_source(obj, position, gui) %same as the rest
-            idx = length(obj.ctc_sources) + 1;
-            obj.lou %needs to handle the whole loudspeaker array to handle CTC
         end
 
         % Reserved for multiple sound scene scenario (for comparing approaches)

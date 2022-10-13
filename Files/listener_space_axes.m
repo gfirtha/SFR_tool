@@ -8,7 +8,6 @@ classdef listener_space_axes < handle
         receiver
         virtual_source_points
         loudspeaker_points
-        ctc_source_points
     end
     
     methods
