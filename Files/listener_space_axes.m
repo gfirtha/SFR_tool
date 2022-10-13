@@ -57,6 +57,7 @@ classdef listener_space_axes < handle
                 'Orientation', 0 );
         end
                 
+        %virtual loudspeaker
         function loudspeaker = draw_loudspeaker(obj,pos,R,orientation,idx)
             x1 = [  -1.8  -1.8  -1  -1 ]'*R;
             y1 = [   -1    1   1   -1 ]'*R;
@@ -67,7 +68,7 @@ classdef listener_space_axes < handle
             x = x - mean(mean(x));
             y = y - mean(mean(y));
             
-            c = [0.2 0.2 0.2;
+            c = [1 0.2 0.2;
                 0.5 0.5 0.5];
             loudspeaker = patch(obj.main_axes, x + pos(1), y + pos(2),[0;1]);
             set(loudspeaker,'FaceVertexCData',c);
@@ -77,13 +78,25 @@ classdef listener_space_axes < handle
             rotate(loudspeaker,[0 0 1], orientation,...
                 [loudspeaker.UserData.Origin(1),loudspeaker.UserData.Origin(2),0]);
         end
+        
+        %representing real loudspeakers
+        function ctc_source = draw_ctc_source(obj,pos,R,orientation)
 
-        function ctc_source = draw_ctc_source(obj,pos,idx)
-            rectangle('Position',[pos(1) pos (2) 2 2],'Curvature',0.2)
-            c = [0.3 0.2 0.2;
+            x1 = [  -1.8  -1.8  -1  -1 ]'*R;
+            y1 = [   -1    1   1   -1 ]'*R;
+            x2 = [   -1 -1    0   0 ]'*R;
+            y2 = [   -1    1  1.5 -1.5 ]'*R;
+            x = [x1,x2];
+            y = [y1,y2];
+            x = x - mean(mean(x));
+            y = y - mean(mean(y));
+            
+            c = [1 0 0;
                 0.5 0.5 0.5];
+            ctc_source = atch(obj.main_axes, x + pos(1), y + pos(2),[0;1]);
             set(ctc_source,'FaceVertexCData',c);
-            loudspeaker_array.UserData= struct( 'Label', idx);
+            rotate(ctc_source, [0 0 1], orientation,...
+                [ctc_source.UserData.Origin(1),ctc_source.UserData.Origin(2),0]);
         end
         
         function virtual_source = draw_virtual_source(obj,pos,orientation,idx)
