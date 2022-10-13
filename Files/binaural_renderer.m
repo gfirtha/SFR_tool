@@ -2,6 +2,8 @@ classdef binaural_renderer < handle
     %BINAURAL_JOB Summary of this class goes here
     %   Detailed explanation goes here
     
+%binaural helyett loudspeaker, ami nem szűr hrtf-fel
+
     properties
         binaural_source
         receiver
