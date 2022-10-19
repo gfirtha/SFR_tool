@@ -1,6 +1,6 @@
 classdef sound_scene_renderer < handle
-    %RENDERER Summary of this class goes here
-    %   Detailed explanation goes here
+    % sound_scene_renderer class contains one SFS_renderer instance for each 
+    % virtual source
     % TODO: make input, rendeder out and binauarl buses
     % and "wire" them up
     properties
@@ -29,13 +29,11 @@ classdef sound_scene_renderer < handle
                     case 'DBAP'
                         obj.SFS_renderer{n} = dbap_renderer(virtual_sources{n}, loudspeaker);
                     case 'WFS'
-                        obj.SFS_renderer{n} = wfs_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate,obj.directivity_tables{idx}, setup.renderer_setup.Antialiasing);
-                    case 'VBAP_WFS'
-                        obj.SFS_renderer{n} = vbap_wfs_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate );
+                        obj.SFS_renderer{n} = wfs_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate,obj.directivity_tables{idx}, setup.Renderer_setup.Antialiasing);
                     case 'TD_stereo'
                         obj.SFS_renderer{n} = time_delay_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate);
                     case 'CTC'
-                        obj.SFS_renderer{n} = ctc_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate);
+                        obj.SFS_renderer{n} = ctc_renderer(virtual_sources{n}, loudspeaker, receiver, setup.Input_stream.SampleRate, setup.Renderer_setup.Plant_model, setup.Renderer_setup.VS_model, setup.Renderer_setup.HRTF_database);
                 end
             end
         end
@@ -44,16 +42,15 @@ classdef sound_scene_renderer < handle
             obj.SFS_renderer{idx}.update_renderer;
         end
 
-        function SFS_output = render(obj, input)
-            SFS_output = 0;
+        function render(obj, input)
             for m = 1 : length(obj.SFS_renderer)
                 obj.SFS_renderer{m}.virtual_source.source_signal.set_signal(input(:,m));
                 obj.SFS_renderer{m}.render;
-
-                SFS_output = SFS_output + cell2mat(cellfun( @(x) x.time_series,...
-                    obj.SFS_renderer{m}.output_signal , 'UniformOutput', false));
+                for n = 1 : length(obj.SFS_renderer{m}.secondary_source_distribution)
+                    obj.SFS_renderer{m}.secondary_source_distribution{n}.output_signal.add_signals(...
+                        obj.SFS_renderer{m}.output_signal{n});
+                end
             end
-
         end
     end
 end

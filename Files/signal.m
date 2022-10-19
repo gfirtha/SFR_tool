@@ -66,7 +66,12 @@ classdef signal < handle
             end
                 
         end
+
+        function obj = clear_signals(obj)
+            obj.time_series = 0*obj.time_series;
+        end
         
+
         function obj = add_spectra(obj, input)
             if isempty(obj.opt_indexes)
                 obj.opt_indexes = input.opt_indexes;

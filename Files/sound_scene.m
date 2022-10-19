@@ -5,7 +5,7 @@ classdef sound_scene < handle
 
     properties
         virtual_sources % Virtual source: WFS or HOA or stereo etc source (should be a class with input signal,)
-        loudspeaker_array % sources to be binauralized by binaural method
+        loudspeaker_array
         receiver
         environment
         scene_renderer
@@ -16,16 +16,16 @@ classdef sound_scene < handle
             obj.environment = environment;
             obj.create_receiver(gui);
 
-            R0 = setup.renderer_setup.R;
+            R0 = setup.Loudspeaker_setup.R;
             pos = get_default_layout(setup.Input_stream.info.NumChannels,  R0 + 0.5);
             for n = 1 : setup.Input_stream.info.NumChannels
                 obj.create_virtual_source(pos(n,:),-pos(n,:)/norm(pos(n,:)), gui, setup.Virtual_source_type, setup.Rendering);
                 obj.virtual_sources{n}.set_input(zeros(setup.Block_size,1),setup.Input_stream.SampleRate);
             end
-            pos_ssd = get_default_layout(setup.renderer_setup.N,R0);
-            for n = 1 : setup.renderer_setup.N
+            pos_ssd = get_default_layout(setup.Loudspeaker_setup.N,R0);
+            for n = 1 : size(pos_ssd,1)
                 obj.create_loudspeaker( pos_ssd(n,:),-pos_ssd(n,:)/norm(pos_ssd(n,:)), gui, setup.loudspeaker_type);
-                obj.loudspeaker_array{n}.set_input(zeros(setup.Block_size,1),setup.Input_stream.SampleRate);
+                obj.loudspeaker_array{n}.set_output(zeros(setup.Block_size,1),setup.Input_stream.SampleRate);
             end
             gui.main_axes.XLim = (R0+1)*[-1,1];
             gui.main_axes.YLim = (R0+1)*[-1,1];
@@ -129,7 +129,12 @@ classdef sound_scene < handle
         end
 
         function output = render_sound_scene(obj,input)
-            output = obj.scene_renderer.render(input);
+            for n = 1 : length(obj.loudspeaker_array)
+                obj.loudspeaker_array{n}.output_signal.clear_signals;
+            end
+            obj.scene_renderer.render(input);
+            output = cell2mat(cellfun( @(x) x.output_signal.time_series,...
+                    obj.loudspeaker_array , 'UniformOutput', false));
         end
     end
 end
