@@ -1,5 +1,5 @@
 classdef sound_scene_renderer < handle
-    % sound_scene_renderer class contains one SFS_renderer instance for each 
+    % sound_scene_renderer class contains one SFS_renderer instance for each
     % virtual source
     % TODO: make input, rendeder out and binauarl buses
     % and "wire" them up
@@ -39,6 +39,19 @@ classdef sound_scene_renderer < handle
         end
 
         function update_SFS_renderers(obj, idx)
+%             switch type
+%                 case 'receiver_moved'
+%                     obj.binaural_renderer{idx}.update_hrtf;
+%                     obj.binaural_renderer{idx}.update_directivity;
+%                 case 'receiver_rotated'
+%                     obj.binaural_renderer{idx}.update_hrtf;
+%                 case 'source_moved'
+%                     obj.binaural_renderer{idx}.update_hrtf;
+%                     obj.binaural_renderer{idx}.update_directivity;
+%                 case 'source_rotated'
+%                     obj.binaural_renderer{idx}.update_directivity;
+%             end
+
             obj.SFS_renderer{idx}.update_renderer;
         end
 
