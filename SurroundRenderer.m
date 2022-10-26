@@ -45,7 +45,7 @@ hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
 %                                              parameter: R radius
 
 if isempty(varargin)
-    input_file = 'gitL_48.wav';
+    input_file = 'gitL.wav';
 else
     input_file = varargin{1};
 end

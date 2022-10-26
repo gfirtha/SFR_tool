@@ -56,6 +56,21 @@ classdef ctc_renderer < handle
                         obj.inv_plant_mx_f(:,:,n) = pinv(squeeze(plant_mx_f(:,:,n)));
                     end
                 case 'point_source'
+                    vs_pos=obj.virtual_source.position;
+                    receiver_pos=obj.receiver.position;
+                    receiver_dir=rad2deg(obj.receiver.orientation);
+                    r_head = 0.1;
+                    L_ear_pos = receiver_pos + abs(deg2rad(receiver_dir+90))*r_head;
+                    R_ear_pos = receiver_pos + abs(deg2rad(receiver_dir-90))*r_head;
+                    dist_table = [ norm(L_ear_pos - vs_pos) ; norm(R_ear_pos - vs_pos)];
+                    dist_center = norm(receiver_pos-vs_pos)
+                    c=environment.c;
+                    M = 4096;
+                    f = (0:M/2-1)/M*fs;
+                    for fi = 1 : length(f)
+                        plant_mx_f(:,:,fi) = exp(-1i*2*pi*f(fi)*dist_table/c)./dist_table.*dist_center./exp(-1i*2*pi*f(fi)*dist_center/c);
+                        obj.inv_plant_mx_f(:,:,fi) = pinv(plant_mx_f(:,:,fi));
+                    end
             end
 
         end
@@ -65,6 +80,7 @@ classdef ctc_renderer < handle
                 case 'HRTF'
                     obj.virtual_source_coefficients = fft(get_hrtfs( obj.virtual_source.position, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database ),[],2);
                 case 'point_source'
+
             end
         end
 
