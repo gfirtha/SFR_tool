@@ -33,26 +33,15 @@ classdef sound_scene_renderer < handle
                     case 'TD_stereo'
                         obj.SFS_renderer{n} = time_delay_renderer(virtual_sources{n}, loudspeaker, setup.Input_stream.SampleRate);
                     case 'CTC'
-                        obj.SFS_renderer{n} = ctc_renderer(virtual_sources{n}, loudspeaker, receiver, setup.Input_stream.SampleRate, setup.Renderer_setup.Plant_model, setup.Renderer_setup.VS_model, setup.Renderer_setup.HRTF_database);
+                        obj.SFS_renderer{n} = ctc_renderer(virtual_sources{n}, loudspeaker, receiver, setup.Input_stream.SampleRate, setup.Renderer_setup.Plant_model, setup.Renderer_setup.VS_model, setup.Renderer_setup.HRTF_database,setup.Renderer_setup.N_filt);
                 end
             end
         end
 
-        function update_SFS_renderers(obj, idx)
-%             switch type
-%                 case 'receiver_moved'
-%                     obj.binaural_renderer{idx}.update_hrtf;
-%                     obj.binaural_renderer{idx}.update_directivity;
-%                 case 'receiver_rotated'
-%                     obj.binaural_renderer{idx}.update_hrtf;
-%                 case 'source_moved'
-%                     obj.binaural_renderer{idx}.update_hrtf;
-%                     obj.binaural_renderer{idx}.update_directivity;
-%                 case 'source_rotated'
-%                     obj.binaural_renderer{idx}.update_directivity;
-%             end
-
-            obj.SFS_renderer{idx}.update_renderer;
+        function update_SFS_renderers(obj, type)
+            for n = 1 : length(obj.SFS_renderer)
+                obj.SFS_renderer{n}.update_renderer(type);
+            end
         end
 
         function render(obj, input)

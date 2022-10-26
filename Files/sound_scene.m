@@ -41,11 +41,13 @@ classdef sound_scene < handle
             draggable(gui.receiver,@update_receiver_position, @update_receiver_orientation);
             function update_receiver_position(receiver)
                 obj.receiver.position = gui.receiver.UserData.Origin;
+                obj.scene_renderer.update_SFS_renderers('receiver_moved');
             end
             function update_receiver_orientation(receiver)
                 obj.receiver.orientation = [cosd(gui.receiver.UserData.Orientation),...
                     sind(gui.receiver.UserData.Orientation)];
-            end
+                obj.scene_renderer.update_SFS_renderers('receiver_rotated');
+              end
 
         end
 
@@ -64,10 +66,10 @@ classdef sound_scene < handle
             function update_virtual_position(virtual_source)
                 obj.virtual_sources{virtual_source.UserData.Label}.position...
                     = gui.virtual_source_points{virtual_source.UserData.Label}.UserData.Origin;
-                obj.scene_renderer.update_SFS_renderers(virtual_source.UserData.Label);
+                obj.scene_renderer.update_SFS_renderers('virtual_source_moved');
             end
             function update_virtual_orientation(virtual_source)
-                sprintf('not supported')
+                obj.scene_renderer.update_SFS_renderers('virtual_source_rotated');
             end
         end
 
@@ -86,18 +88,14 @@ classdef sound_scene < handle
             function update_loudspeaker_position(loudspeaker)
                 obj.loudspeaker_array{loudspeaker.UserData.Label}.position...
                     = gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Origin;
-                for n = 1 : length(obj.scene_renderer.SFS_renderer)
-                    obj.scene_renderer.update_SFS_renderers(n);
-                end
+                obj.scene_renderer.update_SFS_renderers('loudspeaker_moved');
             end
             function update_loudspeaker_orientation(loudspeaker)
                 obj.loudspeaker_array{loudspeaker.UserData.Label}.orientation...
                     = [ cosd(gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Orientation),...
                     sind(gui.loudspeaker_points{loudspeaker.UserData.Label}.UserData.Orientation)];
-                for n = 1 : length(obj.scene_renderer.SFS_renderer)
-                    obj.scene_renderer.update_SFS_renderers(n);
-                end
-             end
+                obj.scene_renderer.update_SFS_renderers('loudspeaker_rotated');
+            end
         end
 
         function obj = delete_loudspeaker(obj, bin_source_idx, gui)
@@ -134,7 +132,7 @@ classdef sound_scene < handle
             end
             obj.scene_renderer.render(input);
             output = cell2mat(cellfun( @(x) x.output_signal.time_series,...
-                    obj.loudspeaker_array , 'UniformOutput', false));
+                obj.loudspeaker_array , 'UniformOutput', false));
         end
     end
 end

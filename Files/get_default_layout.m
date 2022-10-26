@@ -4,7 +4,7 @@ function [position] = get_default_layout(Num_channels, R)
         case 1
             [x,y] = pol2cart(0*pi/180,R);
         case 2
-            [x,y] = pol2cart([30; -30]*pi/180,repmat(R,Num_channels,1));
+            [x,y] = pol2cart([27; -27]*pi/180,repmat(R,Num_channels,1));
         case 3
             [x,y] = pol2cart([30; -30; 0]*pi/180,repmat(R,Num_channels,1));
         case 4

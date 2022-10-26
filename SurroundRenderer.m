@@ -8,7 +8,7 @@ gui_State = struct('gui_Name',       mfilename, ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
-end
+end 
 
 if nargout
     [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
@@ -22,7 +22,7 @@ addpath('Samples')
 addpath(genpath('Files'))
 addpath(genpath('RIRs'))
 SOFAstart;
-hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
+hrtf_sofa = SOFAload(['BEM_5.00.sofa']);
 
 % Setup options:
 %   Rendering:              'CTC':             Crosstalk cancellation,
@@ -56,8 +56,8 @@ handles.sound_scene_setup = struct(  ...
     'sofa_def_path',            '..',...
     'Volume',                   0.5, ...    
     'Loudspeaker_setup',        struct('R',2,'N',2),...
-    'Rendering',                'CTC',...
-    'Renderer_setup',           struct( 'Plant_model','HRTF','VS_model','HRTF', 'HRTF_database',hrtf_sofa),...
+    'Rendering',                'WFS',...
+    'Renderer_setup',           struct( 'Plant_model','HRTF','VS_model','point_source', 'HRTF_database',hrtf_sofa,'N_filt',1024),...
     'loudspeaker_type',         struct('Shape','circular_piston','R',0.05),...
     'Virtual_source_type',      struct('Shape','point_source','R',0.025));
 % Renderer_setup structs:
@@ -65,7 +65,6 @@ handles.sound_scene_setup = struct(  ...
 %    'plant_model': 'point_source' / 'spherical_head' / 'HRTF'
 %    'VS_model': 'point_source' / 'spherical_head' / 'HRTF
 %    'HRTF': sofa_hrtf
-%    %TODO: hrtf range extrapolation function
 % Ambisonics renderer:
 % HOA renderer:
 %
