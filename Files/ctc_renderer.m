@@ -87,19 +87,11 @@ classdef ctc_renderer < handle
             end
 
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
-      %      inv_plant_mx_f2 = zeros(size(plant_mx_f));
             for n = 1 : size(plant_mx_f,3)
-   %             inv_plant_mx_f2(:,:,n) = pinv(squeeze(plant_mx_f(:,:,n)));
                 X = squeeze(plant_mx_f(:,:,n));
                 lambda = 1e-5;
                 obj.inv_plant_mx_f(:,:,n) = inv(X.'*X + lambda*eye(size(X)))*X.';
             end
-%             plot(squeeze(f),20*log10(squeeze(abs(inv_plant_mx_f2(1,1,:)))));
-%             hold on
-%             plot(squeeze(f),20*log10(squeeze(abs(obj.inv_plant_mx_f(1,1,:)))),'--')
-%             xlim([0,24e3]);
-%             ylim([0,60])
-            %inv_plant_mx_f_2 = obj.inv_plant_mx_f.*( f>20 & f<20e3);
         end
 
         function obj = update_vs_model(obj)
