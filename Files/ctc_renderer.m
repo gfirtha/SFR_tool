@@ -76,6 +76,14 @@ classdef ctc_renderer < handle
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
+                    
+                    vs_pos=obj.virtual_source.position;
+                    receiver_pos=obj.receiver.position;
+                    receiver_dir=rad2deg(obj.receiver.orientation);
+                    r_head = 0.1;
+                    L_ear_pos = receiver_pos + abs(deg2rad(receiver_dir+90))*r_head;
+                    R_ear_pos = receiver_pos + abs(deg2rad(receiver_dir-90))*r_head;
+                    
                     Rmx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
@@ -84,6 +92,23 @@ classdef ctc_renderer < handle
                     f = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     plant_mx_f = 1/(4*pi)*bsxfun( @times, exp( -1i*2*pi*bsxfun( @times, f, Rmx/340  ) ), 1./Rmx);
 
+% =======
+%                     vs_pos=obj.virtual_source.position;
+%                     receiver_pos=obj.receiver.position;
+%                     receiver_dir=rad2deg(obj.receiver.orientation);
+%                     r_head = 0.1;
+%                     L_ear_pos = receiver_pos + abs(deg2rad(receiver_dir+90))*r_head;
+%                     R_ear_pos = receiver_pos + abs(deg2rad(receiver_dir-90))*r_head;
+%                     dist_table = [ norm(L_ear_pos - vs_pos) ; norm(R_ear_pos - vs_pos)];
+%                     dist_center = norm(receiver_pos-vs_pos)
+%                     c=environment.c;
+%                     M = 4096;
+%                     f = (0:M/2-1)/M*fs;
+%                     for fi = 1 : length(f)
+%                         plant_mx_f(:,:,fi) = exp(-1i*2*pi*f(fi)*dist_table/c)./dist_table.*dist_center./exp(-1i*2*pi*f(fi)*dist_center/c);
+%                         obj.inv_plant_mx_f(:,:,fi) = pinv(plant_mx_f(:,:,fi));
+%                     end
+% >>>>>>> origin/kissdani
             end
 
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
@@ -99,14 +124,12 @@ classdef ctc_renderer < handle
                 case 'HRTF'
                     obj.virtual_source_coefficients = fft(get_hrtfs( obj.virtual_source.position, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database  ),[],2);
                 case 'point_source'
-
                     xs = obj.virtual_source.position;
                     r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
                     R = sqrt(sum( (bsxfun( @plus, x_ear, -xs)).^2,2));
                     f = (0:obj.N_filt-1)'/obj.N_filt*obj.fs ;
                     obj.virtual_source_coefficients = 1/(4*pi)* bsxfun(@times, exp( -1i*2*pi* bsxfun(@times, f', R/340 )), 1./R );
-
             end
         end
 
