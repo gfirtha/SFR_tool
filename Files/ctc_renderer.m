@@ -77,46 +77,24 @@ classdef ctc_renderer < handle
                     r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
                     
-                    vs_pos=obj.virtual_source.position;
-                    receiver_pos=obj.receiver.position;
-                    receiver_dir=rad2deg(obj.receiver.orientation);
-                    r_head = 0.1;
-                    L_ear_pos = receiver_pos + abs(deg2rad(receiver_dir+90))*r_head;
-                    R_ear_pos = receiver_pos + abs(deg2rad(receiver_dir-90))*r_head;
-                    
                     Rmx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
                         Rmx(:,n) = sqrt(sum(v_sr.^2,2));
                     end
+
                     f = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     plant_mx_f = 1/(4*pi)*bsxfun( @times, exp( -1i*2*pi*bsxfun( @times, f, Rmx/340  ) ), 1./Rmx);
-
-% =======
-%                     vs_pos=obj.virtual_source.position;
-%                     receiver_pos=obj.receiver.position;
-%                     receiver_dir=rad2deg(obj.receiver.orientation);
-%                     r_head = 0.1;
-%                     L_ear_pos = receiver_pos + abs(deg2rad(receiver_dir+90))*r_head;
-%                     R_ear_pos = receiver_pos + abs(deg2rad(receiver_dir-90))*r_head;
-%                     dist_table = [ norm(L_ear_pos - vs_pos) ; norm(R_ear_pos - vs_pos)];
-%                     dist_center = norm(receiver_pos-vs_pos)
-%                     c=environment.c;
-%                     M = 4096;
-%                     f = (0:M/2-1)/M*fs;
-%                     for fi = 1 : length(f)
-%                         plant_mx_f(:,:,fi) = exp(-1i*2*pi*f(fi)*dist_table/c)./dist_table.*dist_center./exp(-1i*2*pi*f(fi)*dist_center/c);
-%                         obj.inv_plant_mx_f(:,:,fi) = pinv(plant_mx_f(:,:,fi));
-%                     end
-% >>>>>>> origin/kissdani
             end
 
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
             for n = 1 : size(plant_mx_f,3)
                 X = squeeze(plant_mx_f(:,:,n));
                 lambda = 1e-5;
-                obj.inv_plant_mx_f(:,:,n) = inv(X.'*X + lambda*eye(size(X)))*X.';
+                obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
             end
+            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
+            obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
         end
 
         function obj = update_vs_model(obj)
