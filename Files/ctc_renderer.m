@@ -20,6 +20,7 @@ classdef ctc_renderer < handle
         inv_plant_mx_f    % Inverse plant matrix in frequency domain
         virtual_source_coefficients
         N_filt
+        r_head = 0.1 % radius of head for rigid sphere and point source model
     end
     properties (SetAccess = protected)
         CTC_filters
@@ -47,8 +48,8 @@ classdef ctc_renderer < handle
                 hrtf_measured = obj.hrtf_database.Data.IR(ixs,:,:);
                 [theta_measurement,ix] = sort(theta_measurement);
                 hrtf_measured = hrtf_measured(ix,:,:);
-              %  theta_measurement = theta_measurement(1:16:end);
-              %  hrtf_measured = hrtf_measured(1:16:end,:,:);
+                %  theta_measurement = theta_measurement(1:16:end);
+                %  hrtf_measured = hrtf_measured(1:16:end,:,:);
                 obj.hrtf_2d_database = struct('R',R_measurement,'theta',theta_measurement, 'spectrum',fft(hrtf_measured,[],3));
 
             else
@@ -74,9 +75,9 @@ classdef ctc_renderer < handle
                     f = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                 case 'point_source'
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
-                    r_head = 0.1;
+                    %r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
-                    
+
                     Rmx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
@@ -85,6 +86,27 @@ classdef ctc_renderer < handle
 
                     f = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     plant_mx_f = 1/(4*pi)*bsxfun( @times, exp( -1i*2*pi*bsxfun( @times, f, Rmx/340  ) ), 1./Rmx);
+                case 'rigid_sphere'
+                    % A comparison of the performance of HRTF models in inverse filter design for Crosstalk Cancellation
+                    % 2.2 (5)
+                    theta = obj.receiver.postion
+                    cLear = [];
+                    cRear = [];
+                    posSpeak{1}= obj.secondary_source_distribution{1, 1}.position;
+                    posSpeak{2}= obj.secondary_source_distribution{1, 2}.position;
+                     Rmx = zeros(size(x_ear,1), size(xs,1));
+                    for n = 1 : size(xs,1)
+                        v_sr = bsxfun(@minus, xs(n,:), x_ear);
+                        Rmx(:,n) = sqrt(sum(v_sr.^2,2));
+                    end
+                    %for f = 1 : length(obj.)
+                        for n = 1 : 10
+                            for m = 1 : 2
+                               % cLear = cLear + (((2n+1)*getSphH(n,2,k*norm(obj.reciever.position-posSpeak{m}))*-1^n*legendreP(n,2,sin(theta))/getDifSphH(n,2,k*r_head) );
+                                %cRear = cRear + (((2n+1)*getSphH(n,2,k*norm(obj.reciever.position-posSpeak{m}))*legendreP(n,2,sin(theta))/getDifSphH(n,2,k*r_head) );
+                            end
+                        end
+                    %end
             end
 
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
@@ -103,7 +125,7 @@ classdef ctc_renderer < handle
                     obj.virtual_source_coefficients = fft(get_hrtfs( obj.virtual_source.position, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database  ),[],2);
                 case 'point_source'
                     xs = obj.virtual_source.position;
-                    r_head = 0.1;
+                    %r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
                     R = sqrt(sum( (bsxfun( @plus, x_ear, -xs)).^2,2));
                     f = (0:obj.N_filt-1)'/obj.N_filt*obj.fs ;
