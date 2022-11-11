@@ -118,11 +118,11 @@ classdef ctc_renderer < handle
                     Norder = 50;
                      
                     plant_mx = zeros(2,size(xs,1),length(freq));
+                    sign_mx = [-ones(size(xs,1));size(xs,1)];
                     for fi = 2 : length(freq)
                         A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
                         for n = 1 : Norder
-                            sign_mx = ([-1 -1;1 1]')^n;
-                            plant_mx = plant_mx + A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
+                            plant_mx = plant_mx + A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
                         end
                    end
             end
