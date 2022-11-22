@@ -75,8 +75,7 @@ classdef ctc_renderer < handle
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                 case 'point_source'
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
-                    %r_head = 0.1;
-                    x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
+                    x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
                     Rmx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
@@ -89,17 +88,14 @@ classdef ctc_renderer < handle
                 case 'rigid_sphere'
                     % A comparison of the performance of HRTF models in inverse filter design for Crosstalk Cancellation
                     % 2.2 (5)
-%                     theta = obj.receiver.postion
-%                     cLear = [];
-%                     cRear = [];
-%                     posSpeak{1}= obj.secondary_source_distribution{1, 1}.position;
-%                     posSpeak{2}= obj.secondary_source_distribution{1, 2}.position;
-                    
+
+                    %TODO:
+                    %inv plant mx
+
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
-                    %r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
-                    Rmx = zeros(size(x_ear,1), size(xs,1));                     
+                    Rmx = zeros(size(x_ear,1), size(xs,1));
                     theta_mx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
@@ -116,25 +112,26 @@ classdef ctc_renderer < handle
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     k = 2*pi*freq / c;
                     Norder = 50;
-                     
-                    plant_mx = zeros(2,size(xs,1),length(freq));
+
+                    plant_mx_f = zeros(2,size(xs,1),length(freq));
                     sign_mx = [-ones(size(xs,1));size(xs,1)];
                     for fi = 2 : length(freq)
                         A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
                         for n = 1 : Norder
-                            plant_mx = plant_mx + A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
+                            plant_mx_f = plant_mx_f + A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
                         end
-                   end
+                    end
             end
-
-%             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
-%             for n = 1 : size(plant_mx_f,3)
-%                 X = squeeze(plant_mx_f(:,:,n));
-%                 lambda = 1e-5;
-%                 obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
-%             end
-%             obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
-%             obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
+                
+            %ki volt kommentelve
+            obj.inv_plant_mx_f = zeros(size(plant_mx_f));
+            for n = 1 : size(plant_mx_f,3)
+                X = squeeze(plant_mx_f(:,:,n));
+                lambda = 1e-5;
+                obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
+            end
+            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
+            obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
         end
 
         function obj = update_vs_model(obj)
@@ -143,11 +140,41 @@ classdef ctc_renderer < handle
                     obj.virtual_source_coefficients = fft(get_hrtfs( obj.virtual_source.position, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database  ),[],2);
                 case 'point_source'
                     xs = obj.virtual_source.position;
-                    %r_head = 0.1;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
                     R = sqrt(sum( (bsxfun( @plus, x_ear, -xs)).^2,2));
                     f = (0:obj.N_filt-1)'/obj.N_filt*obj.fs ;
                     obj.virtual_source_coefficients = 1/(4*pi)* bsxfun(@times, exp( -1i*2*pi* bsxfun(@times, f', R/340 )), 1./R );
+                case 'rigid_sphere'
+                    xs = obj.virtual_source.position;
+                    x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
+
+                    Rmx = zeros(size(x_ear,1), size(xs,1));
+                    theta_mx = zeros(size(x_ear,1), size(xs,1));
+                    for n = 1 : size(xs,1)
+                        v_sr = bsxfun(@minus, xs(n,:), x_ear);
+                        Rmx(:,n) = sqrt(sum(v_sr.^2,2));
+
+                        v_ls = bsxfun(@minus, xs(n,:), obj.receiver.position);
+                        v_ls/norm(v_ls);
+                        v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
+                        v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
+
+                        theta_mx(:,n) = acos(v_ls*v_ears.');
+                    end
+                    c = 343.1;
+                    freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
+                    k = 2*pi*freq / c;
+                    Norder = 50;
+
+                    obj.virtual_source_coefficients = zeros(2,size(xs,1),length(freq));
+                    sign_mx = [-ones(size(xs,1));size(xs,1)];
+                    for fi = 2 : length(freq)
+                        A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
+                        for n = 1 : Norder
+                             obj.virtual_source_coefficients =  obj.virtual_source_coefficients + ...
+                                 A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
+                        end
+                    end
             end
         end
 
