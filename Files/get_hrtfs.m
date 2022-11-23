@@ -17,7 +17,7 @@ for n = 1 : size(x_extrap,1)
     hrtf_extrap = extrapolate_hrtf( hrtf_ext, hrtf_db.Data.SamplingRate ,x_extrap(n,:),...
         R_measurement*[cos(theta_ext) sin(theta_ext)]);
 
-    hrtf_resp(:,n,:) = ifft( hrtf_extrap, [], 2,'symmetric' );
+    hrtf_resp(:,n,:) = ifft( hrtf_interp, [], 2,'symmetric' );
 end
 hrtf_resp = squeeze( hrtf_resp );
 

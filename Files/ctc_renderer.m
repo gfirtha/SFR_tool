@@ -68,6 +68,7 @@ classdef ctc_renderer < handle
 
         function obj = update_plant_mx(obj)
             switch obj.plant_model
+                % Plant matrix: row index: ear  , column index: loudspeaker
                 case 'HRTF'
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     plant_mx_t = get_hrtfs( xs, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database );
@@ -102,27 +103,30 @@ classdef ctc_renderer < handle
                         Rmx(:,n) = sqrt(sum(v_sr.^2,2));
 
                         v_ls = bsxfun(@minus, xs(n,:), obj.receiver.position);
-                        v_ls/norm(v_ls);
-                        v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
-                        v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
-
-                        theta_mx(:,n) = acos(v_ls*v_ears.');
+                        v_ls = v_ls/norm(v_ls);
+                        v_med = obj.receiver.orientation;
+                    %    v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
+                     %   v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
+                        theta_mx(:,n) = -atan2d(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
                     end
                     c = 343.1;
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     k = 2*pi*freq / c;
-                    Norder = 50;
+                    Norder = 100;
 
                     plant_mx_f = zeros(2,size(xs,1),length(freq));
-                    sign_mx = [-ones(size(xs,1));size(xs,1)];
-                    for fi = 2 : length(freq)
-                        A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
-                        for n = 1 : Norder
-                            plant_mx_f = plant_mx_f + A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
-                        end
+                    sign_mx = [-ones(1, size(xs,1));ones(1, size(xs,1))];
+
+                    kR = bsxfun(@times , k, Rmx );
+                    A0 = bsxfun( @times, Rmx, 1./(bsxfun(@times, k*obj.r_head^2, exp(-1i*kR) )));
+                    for n = 0 : Norder
+                        plant_mx_f = plant_mx_f + (2*n+1)*A0.*getSphH( n, 2, kR ).*bsxfun( @times, sign_mx.^n.*legendreP(n,sin(theta_mx)), 1./getDifSphH( n, 2, k*obj.r_head ) );
                     end
+                    plant_mx_f(isnan(plant_mx_f)) = 0;
+                    plant_mx_f(isinf(plant_mx_f)) = 0;
+
             end
-                
+
             %ki volt kommentelve
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
             for n = 1 : size(plant_mx_f,3)
@@ -130,7 +134,7 @@ classdef ctc_renderer < handle
                 lambda = 1e-5;
                 obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
             end
-            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
+            %            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
             obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
         end
 
@@ -140,7 +144,7 @@ classdef ctc_renderer < handle
                     obj.virtual_source_coefficients = fft(get_hrtfs( obj.virtual_source.position, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database  ),[],2);
                 case 'point_source'
                     xs = obj.virtual_source.position;
-                    x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*r_head)'));
+                    x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
                     R = sqrt(sum( (bsxfun( @plus, x_ear, -xs)).^2,2));
                     f = (0:obj.N_filt-1)'/obj.N_filt*obj.fs ;
                     obj.virtual_source_coefficients = 1/(4*pi)* bsxfun(@times, exp( -1i*2*pi* bsxfun(@times, f', R/340 )), 1./R );
@@ -171,8 +175,8 @@ classdef ctc_renderer < handle
                     for fi = 2 : length(freq)
                         A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
                         for n = 1 : Norder
-                             obj.virtual_source_coefficients =  obj.virtual_source_coefficients + ...
-                                 A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
+                            obj.virtual_source_coefficients =  obj.virtual_source_coefficients + ...
+                                A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
                         end
                     end
             end
