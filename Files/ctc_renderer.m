@@ -105,8 +105,8 @@ classdef ctc_renderer < handle
                         v_ls = bsxfun(@minus, xs(n,:), obj.receiver.position);
                         v_ls = v_ls/norm(v_ls);
                         v_med = obj.receiver.orientation;
-                    %    v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
-                     %   v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
+                        %    v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
+                        %   v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
                         theta_mx(:,n) = -atan2d(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
                     end
                     c = 343.1;
@@ -115,16 +115,22 @@ classdef ctc_renderer < handle
                     Norder = 100;
 
                     plant_mx_f = zeros(2,size(xs,1),length(freq));
-                    sign_mx = [-ones(1, size(xs,1));ones(1, size(xs,1))];
+                    sign_mx = -[-ones(1, size(xs,1));ones(1, size(xs,1))];
 
                     kR = bsxfun(@times , k, Rmx );
                     A0 = bsxfun( @times, Rmx, 1./(bsxfun(@times, k*obj.r_head^2, exp(-1i*kR) )));
                     for n = 0 : Norder
-                        plant_mx_f = plant_mx_f + (2*n+1)*A0.*getSphH( n, 2, kR ).*bsxfun( @times, sign_mx.^n.*legendreP(n,sin(theta_mx)), 1./getDifSphH( n, 2, k*obj.r_head ) );
+                        Pn = getLegendre(n,0,sin(theta_mx));
+                        plant_mx_f = plant_mx_f + (2*n+1)*A0.*getSphH( n, 2, kR ).*bsxfun( @times, sign_mx.^n.*Pn, 1./getDifSphH( n, 2, k*obj.r_head ) );
                     end
                     plant_mx_f(isnan(plant_mx_f)) = 0;
                     plant_mx_f(isinf(plant_mx_f)) = 0;
-
+%                     figure;
+%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
+%                     hold on
+%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
+%                     grid on
+%                     xlim([20,20e3])
             end
 
             %ki volt kommentelve
