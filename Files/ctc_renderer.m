@@ -107,15 +107,15 @@ classdef ctc_renderer < handle
                         v_med = obj.receiver.orientation;
                         %    v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
                         %   v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
-                        theta_mx(:,n) = -atan2d(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
+                        theta_mx(:,n) = -atan2(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
                     end
                     c = 343.1;
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     k = 2*pi*freq / c;
-                    Norder = 100;
+                    Norder = 20;
 
                     plant_mx_f = zeros(2,size(xs,1),length(freq));
-                    sign_mx = -[-ones(1, size(xs,1));ones(1, size(xs,1))];
+                    sign_mx = [ones(1, size(xs,1));-ones(1, size(xs,1))];
 
                     kR = bsxfun(@times , k, Rmx );
                     A0 = bsxfun( @times, Rmx, 1./(bsxfun(@times, k*obj.r_head^2, exp(-1i*kR) )));
@@ -158,33 +158,29 @@ classdef ctc_renderer < handle
                     xs = obj.virtual_source.position;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
-                    Rmx = zeros(size(x_ear,1), size(xs,1));
-                    theta_mx = zeros(size(x_ear,1), size(xs,1));
-                    for n = 1 : size(xs,1)
-                        v_sr = bsxfun(@minus, xs(n,:), x_ear);
-                        Rmx(:,n) = sqrt(sum(v_sr.^2,2));
-
-                        v_ls = bsxfun(@minus, xs(n,:), obj.receiver.position);
-                        v_ls/norm(v_ls);
-                        v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
-                        v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
-
-                        theta_mx(:,n) = acos(v_ls*v_ears.');
-                    end
+                    v_sr = bsxfun(@minus, xs, x_ear);
+                    R_vec = sqrt(sum(v_sr.^2,2));
+                    v_ls = bsxfun(@minus, xs, obj.receiver.position);
+                    v_ls = v_ls/norm(v_ls);
+                    v_med = obj.receiver.orientation;
+                    theta = -atan2(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
+                   % theta = acos(v_ls*v_med');
                     c = 343.1;
-                    freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
+                    freq = (0:obj.N_filt-1)/obj.N_filt*obj.fs ;
                     k = 2*pi*freq / c;
-                    Norder = 50;
+                    Norder = 20;
+                    VS_coef = zeros(2,length(freq));
+                    sign_vec = [1;-1];
 
-                    obj.virtual_source_coefficients = zeros(2,size(xs,1),length(freq));
-                    sign_mx = [-ones(size(xs,1));size(xs,1)];
-                    for fi = 2 : length(freq)
-                        A0 = Rmx./(k(fi)*obj.r_head^2.*exp(-1i*k(fi).*Rmx));
-                        for n = 1 : Norder
-                            obj.virtual_source_coefficients =  obj.virtual_source_coefficients + ...
-                                A0*(2*n+1)*getSphH( n, 2, k(fi)*Rmx ).*sign_mx^n.*legendreP(n,2*cos(theta_mx))./getDifSphH( n, 2, k(fi)*Rmx );
-                        end
+                    kR = bsxfun(@times , k, R_vec );
+                    A0 = bsxfun( @times, R_vec, 1./(bsxfun(@times, k*obj.r_head^2, exp(-1i*kR) )));
+                    for n = 0 : Norder
+                        Pn = getLegendre(n,0,sin(theta));
+                        VS_coef = VS_coef + (2*n+1)*A0.*getSphH( n, 2, kR ).*bsxfun( @times, sign_vec.^n.*Pn, 1./getDifSphH( n, 2, k*obj.r_head ) );
                     end
+                    VS_coef(isnan(VS_coef)) = 0;
+                    VS_coef(isinf(VS_coef)) = 0;
+                    obj.virtual_source_coefficients = VS_coef;
             end
         end
 
