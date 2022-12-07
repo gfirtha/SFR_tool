@@ -90,9 +90,6 @@ classdef ctc_renderer < handle
                     % A comparison of the performance of HRTF models in inverse filter design for Crosstalk Cancellation
                     % 2.2 (5)
 
-                    %TODO:
-                    %inv plant mx
-
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
@@ -136,9 +133,9 @@ classdef ctc_renderer < handle
                     ylabel({'Magnitude [dB]'});
                     xlabel({'frequency [Hz]'});
                     xlim([100,20e3])
-            %ki volt kommentelve
+
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
-            for n = 1 : size(plant_mx_f,3)
+            for n = 1 : size(plant_mx_f,3) %tikhonov
                 X = squeeze(plant_mx_f(:,:,n));
                 lambda = 1e-5;
                 obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
