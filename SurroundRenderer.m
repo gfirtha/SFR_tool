@@ -22,7 +22,7 @@ addpath('Samples')
 addpath(genpath('Files'))
 addpath(genpath('RIRs'))
 SOFAstart;
-hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
+hrtf_sofa = SOFAload(['c:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Files\RIRs\BuK_ED_corr.sofa']);
 
 % Setup options:
 %   Rendering:              'CTC':             Crosstalk cancellation,
@@ -45,7 +45,7 @@ hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
 %                                              parameter: R radius
 
 if isempty(varargin)
-    input_file = 'gitL_48.wav';
+    input_file = 'c:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Samples\gitL_48.wav';
 else
     input_file = varargin{1};
 end

@@ -125,14 +125,17 @@ classdef ctc_renderer < handle
                     end
                     plant_mx_f(isnan(plant_mx_f)) = 0;
                     plant_mx_f(isinf(plant_mx_f)) = 0;
-%                     figure;
-%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
-%                     hold on
-%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
-%                     grid on
-%                     xlim([20,20e3])
+                    
             end
 
+            figure('Name',obj.plant_model)
+                    semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
+                    hold on
+                    semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
+                    grid on
+                    ylabel({'Magnitude [dB]'});
+                    xlabel({'frequency [Hz]'});
+                    xlim([100,20e3])
             %ki volt kommentelve
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
             for n = 1 : size(plant_mx_f,3)
@@ -164,7 +167,7 @@ classdef ctc_renderer < handle
                     v_ls = v_ls/norm(v_ls);
                     v_med = obj.receiver.orientation;
                     theta = -atan2(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
-                   % theta = acos(v_ls*v_med');
+                    % theta = acos(v_ls*v_med');
                     c = 343.1;
                     freq = (0:obj.N_filt-1)/obj.N_filt*obj.fs ;
                     k = 2*pi*freq / c;
