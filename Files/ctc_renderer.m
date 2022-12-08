@@ -122,26 +122,42 @@ classdef ctc_renderer < handle
                     end
                     plant_mx_f(isnan(plant_mx_f)) = 0;
                     plant_mx_f(isinf(plant_mx_f)) = 0;
-                    
+
             end
 
             figure('Name',obj.plant_model)
-                    semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
-                    hold on
-                    semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
-                    grid on
-                    ylabel({'Magnitude [dB]'});
-                    xlabel({'frequency [Hz]'});
-                    xlim([100,20e3])
-
+            semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
+            hold on
+            semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
+            grid on
+            ylabel({'Magnitude [dB]'});
+            xlabel({'frequency [Hz]'});
+            xlim([200,20e3])
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
-            for n = 1 : size(plant_mx_f,3) %tikhonov
+%           obj.inv_plant_mx_f(:,:,squeeze(obj.fs)>20e3) = 0;
+
+            %%%Tikhonov regularization
+            for n = 1 : size(plant_mx_f,3) % TIKHONOV regularization
                 X = squeeze(plant_mx_f(:,:,n));
                 lambda = 1e-5;
                 obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
             end
-            %            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
             obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
+
+            %%%no regularization
+%             for n = 1 : size(plant_mx_f,3) % no regularization
+%                 X = squeeze(plant_mx_f(:,:,n));
+%                 obj.inv_plant_mx_f(:,:,n) = pinv(X);
+%             end
+
+            figure('Name','transfer function')
+            semilogx(squeeze(freq),20*log10(squeeze(abs(obj.inv_plant_mx_f(2,1,:)))))
+            hold on
+            semilogx(squeeze(freq),20*log10(squeeze(abs(obj.inv_plant_mx_f(2,2,:)))))
+            grid on
+            ylabel({'Magnitude [dB]'});
+            xlabel({'frequency [Hz]'});
+            xlim([200,20e3])
         end
 
         function obj = update_vs_model(obj)
