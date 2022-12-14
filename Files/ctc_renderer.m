@@ -154,6 +154,7 @@ classdef ctc_renderer < handle
                     R = sqrt(sum( (bsxfun( @plus, x_ear, -xs)).^2,2));
                     f = (0:obj.N_filt-1)'/obj.N_filt*obj.fs ;
                     obj.virtual_source_coefficients = 1/(4*pi)* bsxfun(@times, exp( -1i*2*pi* bsxfun(@times, f', R/340 )), 1./R );
+                    obj.virtual_source_coefficients = obj.virtual_source_coefficients  / max(max(abs(obj.virtual_source_coefficients )));
                 case 'rigid_sphere'
                     xs = obj.virtual_source.position;
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));

@@ -26,7 +26,7 @@ classdef time_delay_renderer < handle
             end
         end
         
-        function obj = update_renderer(obj)
+        function obj = update_renderer(obj,type)
             x0 = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
             n0 = cell2mat(cellfun( @(x) x.orientation, obj.secondary_source_distribution, 'UniformOutput', false)');
             delay_filters = get_td_filters( obj.virtual_source.position, x0, n0, obj.fs, obj.c );
