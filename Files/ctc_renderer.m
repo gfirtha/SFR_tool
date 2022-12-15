@@ -87,9 +87,6 @@ classdef ctc_renderer < handle
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     plant_mx_f = 1/(4*pi)*bsxfun( @times, exp( -1i*2*pi*bsxfun( @times, freq, Rmx/340  ) ), 1./Rmx);
                 case 'rigid_sphere'
-                    % A comparison of the performance of HRTF models in inverse filter design for Crosstalk Cancellation
-                    % 2.2 (5)
-
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
@@ -125,14 +122,14 @@ classdef ctc_renderer < handle
 
             end
 
-%             figure('Name',obj.plant_model)
-%             semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
-%             hold on
-%             semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
-%             grid on
-%             ylabel({'Magnitude [dB]'});
-%             xlabel({'frequency [Hz]'});
-%             xlim([200,20e3])
+            figure('Name',obj.plant_model)
+            semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
+            hold on
+            semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
+            grid on
+            ylabel({'Magnitude [dB]'});
+            xlabel({'frequency [Hz]'});
+            xlim([200,20e3])
 
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
 %           obj.inv_plant_mx_f(:,:,squeeze(obj.fs)>20e3) = 0;
