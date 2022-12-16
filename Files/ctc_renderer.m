@@ -71,28 +71,21 @@ classdef ctc_renderer < handle
                 % Plant matrix: row index: ear  , column index: loudspeaker
                 case 'HRTF'
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
-                    plant_mx_t = get_hrtfs( xs, obj.receiver.position, obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database );
+                    plant_mx_t = get_hrtfs( xs, obj.receiver.position,...
+                        obj.receiver.orientation, obj.hrtf_database, obj.hrtf_2d_database );
                     plant_mx_f = fft(plant_mx_t,[],3);
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                 case 'point_source'
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
-
                     Rmx = zeros(size(x_ear,1), size(xs,1));
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
                         Rmx(:,n) = sqrt(sum(v_sr.^2,2));
                     end
-
                     freq = reshape((0:obj.N_filt-1)'/obj.N_filt*obj.fs, [1,1,obj.N_filt] ) ;
                     plant_mx_f = 1/(4*pi)*bsxfun( @times, exp( -1i*2*pi*bsxfun( @times, freq, Rmx/340  ) ), 1./Rmx);
                 case 'rigid_sphere'
-                    % A comparison of the performance of HRTF models in inverse filter design for Crosstalk Cancellation
-                    % 2.2 (5)
-
-                    %TODO:
-                    %inv plant mx
-
                     xs = cell2mat(cellfun( @(x) x.position,    obj.secondary_source_distribution, 'UniformOutput', false)');
                     x_ear = bsxfun( @plus, obj.receiver.position', fliplr((obj.receiver.orientation'*[1,-1]*obj.r_head)'));
 
@@ -101,12 +94,9 @@ classdef ctc_renderer < handle
                     for n = 1 : size(xs,1)
                         v_sr = bsxfun(@minus, xs(n,:), x_ear);
                         Rmx(:,n) = sqrt(sum(v_sr.^2,2));
-
                         v_ls = bsxfun(@minus, xs(n,:), obj.receiver.position);
                         v_ls = v_ls/norm(v_ls);
                         v_med = obj.receiver.orientation;
-                        %    v_ears = bsxfun(@minus, x_ear, obj.receiver.position);
-                        %   v_ears = bsxfun(@times, v_ears, 1./sqrt(sum(v_ears.^2,2)));
                         theta_mx(:,n) = -atan2(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
                     end
                     c = 343.1;
@@ -125,23 +115,43 @@ classdef ctc_renderer < handle
                     end
                     plant_mx_f(isnan(plant_mx_f)) = 0;
                     plant_mx_f(isinf(plant_mx_f)) = 0;
-%                     figure;
-%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
-%                     hold on
-%                     semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
-%                     grid on
-%                     xlim([20,20e3])
+
             end
 
-            %ki volt kommentelve
+%             figure('Name',obj.plant_model)
+%             semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,1,:)))))
+%             hold on
+%             semilogx(squeeze(freq),20*log10(squeeze(abs(plant_mx_f(2,2,:)))))
+%             grid on
+%             ylabel({'Magnitude [dB]'});
+%             xlabel({'frequency [Hz]'});
+%             xlim([200,20e3])
+
             obj.inv_plant_mx_f = zeros(size(plant_mx_f));
-            for n = 1 : size(plant_mx_f,3)
+%           obj.inv_plant_mx_f(:,:,squeeze(obj.fs)>20e3) = 0;
+
+            %%%Tikhonov regularization
+%             for n = 1 : size(plant_mx_f,3) % TIKHONOV regularization
+%                 X = squeeze(plant_mx_f(:,:,n));
+%                 lambda = 1e-15;
+%                 obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
+%             end
+%             obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
+
+            %%%no regularization
+            for n = 1 : size(plant_mx_f,3) 
                 X = squeeze(plant_mx_f(:,:,n));
-                lambda = 1e-5;
-                obj.inv_plant_mx_f(:,:,n) = pinv(X.'*X + lambda*eye(size(X)))*X.';
+                obj.inv_plant_mx_f(:,:,n) = pinv(X);
             end
-            %            obj.inv_plant_mx_f(:,:,squeeze(f)>20e3) = 0;
-            obj.inv_plant_mx_f = 10*obj.inv_plant_mx_f / max(max(max(obj.inv_plant_mx_f)));
+
+            figure('Name','transfer function')
+            semilogx(squeeze(freq),20*log10(squeeze(abs(obj.inv_plant_mx_f(2,1,:)))))
+            hold on
+            semilogx(squeeze(freq),20*log10(squeeze(abs(obj.inv_plant_mx_f(2,2,:)))))
+            grid on
+            ylabel({'Magnitude [dB]'});
+            xlabel({'frequency [Hz]'});
+            xlim([200,20e3])
         end
 
         function obj = update_vs_model(obj)
@@ -165,7 +175,7 @@ classdef ctc_renderer < handle
                     v_ls = v_ls/norm(v_ls);
                     v_med = obj.receiver.orientation;
                     theta = -atan2(v_ls(1)*v_med(2)-v_ls(2)*v_med(1),v_ls(1)*v_med(1)+v_ls(2)*v_med(2));
-                   % theta = acos(v_ls*v_med');
+                    % theta = acos(v_ls*v_med');
                     c = 343.1;
                     freq = (0:obj.N_filt-1)/obj.N_filt*obj.fs ;
                     k = 2*pi*freq / c;
@@ -183,6 +193,14 @@ classdef ctc_renderer < handle
                     VS_coef(isinf(VS_coef)) = 0;
                     obj.virtual_source_coefficients = VS_coef;
             end
+%             figure('Name',obj.virtual_source_model)
+%             semilogx(squeeze((0:obj.N_filt-1)/obj.N_filt*obj.fs),20*log10(squeeze(abs(obj.virtual_source_coefficients(1,:)))))
+%             hold on
+%             semilogx(squeeze((0:obj.N_filt-1)/obj.N_filt*obj.fs),20*log10(squeeze(abs(obj.virtual_source_coefficients(2,:)))))
+%             grid on
+%             ylabel({'Magnitude [dB]'});
+%             xlabel({'frequency [Hz]'});
+%             xlim([200,20e3])
         end
 
         function obj = update_renderer(obj,type)

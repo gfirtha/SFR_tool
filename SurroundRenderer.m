@@ -18,11 +18,11 @@ end
 
 % --- Executes just before SurroundRenderer is made visible.
 function SurroundRenderer_OpeningFcn(hObject, eventdata, handles, varargin)
-addpath('Samples')
-addpath(genpath('Files'))
+addpath('C:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Samples')
+addpath(genpath('C:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Files'))
 addpath(genpath('RIRs'))
 SOFAstart;
-hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
+hrtf_sofa = SOFAload(['c:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Files\RIRs\BuK_ED_corr.sofa']);
 
 % Setup options:
 %   Rendering:              'CTC':             Crosstalk cancellation,
@@ -45,7 +45,7 @@ hrtf_sofa = SOFAload(['BuK_ED_corr.sofa']);
 %                                              parameter: R radius
 
 if isempty(varargin)
-    input_file = 'gitL_48.wav';
+    input_file = 'GitL_48.wav';
 else
     input_file = varargin{1};
 end
@@ -57,13 +57,13 @@ handles.sound_scene_setup = struct(  ...
     'Volume',                   0.5, ... 
     'Loudspeaker_setup',        struct('R',2,'N',2),...
     'Rendering',                'CTC',...
-    'Renderer_setup',           struct( 'Plant_model','HRTF','VS_model','point_source', 'HRTF_database',hrtf_sofa,'N_filt',4096),...
+    'Renderer_setup',           struct( 'Plant_model','HRTF','VS_model','HRTF', 'HRTF_database',hrtf_sofa,'N_filt',4096),...
     'loudspeaker_type',         struct('Shape','circular_piston','R',0.05),...
     'Virtual_source_type',      struct('Shape','point_source','R',0.025));
 % Renderer_setup structs:
 % CTC renderer
-%    'plant_model': 'point_source' / 'spherical_head' / 'HRTF'
-%    'VS_model': 'point_source' / 'spherical_head' / 'HRTF
+%    'plant_model': 'point_source' / 'rigid_sphere' / 'HRTF'
+%    'VS_model': 'point_source' / 'rigid_sphere' / 'HRTF'
 %    'HRTF': sofa_hrtf
 % Ambisonics renderer:
 % HOA renderer:
