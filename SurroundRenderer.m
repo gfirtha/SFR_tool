@@ -18,11 +18,11 @@ end
 
 % --- Executes just before SurroundRenderer is made visible.
 function SurroundRenderer_OpeningFcn(hObject, eventdata, handles, varargin)
-addpath('C:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Samples')
-addpath(genpath('C:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Files'))
-addpath(genpath('RIRs'))
+addpath('Samples')
+addpath(genpath('Files'))
+addpath(genpath('Files\RIRs'))
 SOFAstart;
-hrtf_sofa = SOFAload(['c:\Users\T470s\BME\9_felev\szakdolgozat\SFR_tool\Files\RIRs\BuK_ED_corr.sofa']);
+hrtf_sofa = SOFAload(['Files\RIRs\BuK_ED_corr.sofa']);
 
 % Setup options:
 %   Rendering:              'CTC':             Crosstalk cancellation,
@@ -57,7 +57,7 @@ handles.sound_scene_setup = struct(  ...
     'Volume',                   0.5, ... 
     'Loudspeaker_setup',        struct('R',2,'N',2),...
     'Rendering',                'CTC',...
-    'Renderer_setup',           struct( 'Plant_model','HRTF','VS_model','HRTF', 'HRTF_database',hrtf_sofa,'N_filt',4096),...
+    'Renderer_setup',           struct( 'Plant_model','point_source','VS_model','HRTF', 'HRTF_database',hrtf_sofa,'N_filt',4096),...
     'loudspeaker_type',         struct('Shape','circular_piston','R',0.05),...
     'Virtual_source_type',      struct('Shape','point_source','R',0.025));
 % Renderer_setup structs:
